@@ -11,10 +11,9 @@ defmodule Mix.Tasks.Dogma do
   @config_file_paths ["config/dogma.exs", "~/.dogma.exs"]
 
   def run(argv) do
-    {dir_or_file, reporter, noerror} = argv |> parse_args
+    {dir_or_file, reporter, noerror, read_stdin?} = argv |> parse_args
     load_config_file(@config_file_paths)
-    config = Config.build
-
+    config = Config.build(read_stdin: read_stdin?)
     {:ok, dispatcher} = GenEvent.start_link([])
     GenEvent.add_handler(dispatcher, reporter, [])
 
