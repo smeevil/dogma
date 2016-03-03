@@ -11,14 +11,14 @@ defmodule Mix.Tasks.Dogma do
   @config_file_paths ["config/dogma.exs", "~/.dogma.exs"]
 
   def run(argv) do
-    {dir, reporter, noerror} = argv |> parse_args
+    {dir_or_file, reporter, noerror} = argv |> parse_args
     load_config_file(@config_file_paths)
     config = Config.build
 
     {:ok, dispatcher} = GenEvent.start_link([])
     GenEvent.add_handler(dispatcher, reporter, [])
 
-    dir
+    dir_or_file
     |> Dogma.run(config, dispatcher)
     |> any_errors?
     |> if do
@@ -29,10 +29,11 @@ defmodule Mix.Tasks.Dogma do
   end
 
   def parse_args(argv) do
-    switches = [format: :string, error: :boolean]
+    switches = [format: :string, error: :boolean, stdin: :boolean]
     {switches, files, []} = OptionParser.parse(argv, switches: switches)
 
     noerror = !Keyword.get(switches, :error, true)
+    read_stdin? =  Keyword.get(switches, :stdin, false)
     format = Keyword.get(switches, :format)
     reporter = Map.get(
       Reporters.reporters,
@@ -40,7 +41,7 @@ defmodule Mix.Tasks.Dogma do
       Reporters.default_reporter
     )
 
-    {List.first(files), reporter, noerror}
+    {List.first(files), reporter, noerror, read_stdin?}
   end
 
   defp any_errors?(scripts) do
